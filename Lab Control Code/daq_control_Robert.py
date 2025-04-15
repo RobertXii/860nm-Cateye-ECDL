@@ -11,7 +11,7 @@ AO1_CHANNEL = f"{DEVICE_NAME}/ao1"
 AI_CHANNEL = f"{DEVICE_NAME}/ai0"
 mA_per_V = 50  # Conversion factor from voltage to current
 V_per_V = 15 # Conversion factor from DAQ input voltage to Piezo voltage
-k_feedforward = 4.375 # V/mA 17.5V/4mA = 4.375 V/mA
+k_feedforward = 3.8 # V/mA 15.3V/4mA = 3.825V/mA
 
 # ====== DAQ Setup Helpers ======
 def init_ao0_task(min_val=0.0, max_val=10.0):
@@ -137,10 +137,10 @@ def log_and_plot_current(duration):
 
 # ====== Example Usage ======
 if __name__ == "__main__":
-    # set_piezo_voltage(30)
+    set_piezo_voltage(0)
     # ramp_piezo_voltage(10, 60, 50)
     # ramp_thread = start_ramp_thread(0, 30, 30)
     # log_and_plot_current(30)
-    set_laser_current(10)
-    # read_laser_current()
+    set_laser_current(0)
+    read_laser_current()
 
