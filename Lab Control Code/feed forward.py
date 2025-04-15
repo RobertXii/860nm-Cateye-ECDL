@@ -7,8 +7,7 @@ import nidaqmx
 # Conversion factors
 mA_per_V = 50  # Laser current conversion factor
 V_per_V = 15   # DAQ input to piezo voltage
-k_feedforward = 100  # 4.375 V/mA
-
+k_feedforward = -7 # V/mA 15.3V/4mA = 3.825V/mA
 # DAQ Channels
 DEVICE_NAME = "Dev1"
 AO0_CHANNEL = f"{DEVICE_NAME}/ao0"  # Laser current control
@@ -40,12 +39,15 @@ class FeedforwardGUI:
         self.root = root
         self.root.title("Piezo Feedforward Control")
 
-        self.slider = ttk.Scale(root, from_=0, to=60, orient="horizontal", length=400, command=self.on_slider_change)
+        self.slider = ttk.Scale(root, from_=0, to=140, orient="horizontal", length=400, command=self.on_slider_change)
         self.slider.set(0)
         self.slider.pack(pady=10)
 
         self.label_piezo = ttk.Label(root, text="Piezo Voltage: 0.00 V")
         self.label_piezo.pack()
+
+        self.label_feedforward = ttk.Label(root, text="Feedforward Current: 0.00 mA")
+        self.label_feedforward.pack()
 
         self.label_measured = ttk.Label(root, text="Measured Laser Current: 0.00 mA")
         self.label_measured.pack()
@@ -61,6 +63,8 @@ class FeedforwardGUI:
 
         # Feedforward logic
         feedforward_current = piezo_voltage / k_feedforward
+        self.label_feedforward.config(text=f"Feedforward Current: {feedforward_current:.2f} mA")
+
         set_piezo_voltage(piezo_voltage)
         set_laser_current(feedforward_current)
 
