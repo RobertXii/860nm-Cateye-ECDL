@@ -6,17 +6,23 @@ import threading
 
 # ====== Configuration ======
 DEVICE_NAME = "Dev1"
-AO_CHANNEL = f"{DEVICE_NAME}/ao0"
+AO0_CHANNEL = f"{DEVICE_NAME}/ao0"
+AO1_CHANNEL = f"{DEVICE_NAME}/ao1"
 AI_CHANNEL = f"{DEVICE_NAME}/ai0"
 mA_per_V = 50  # Conversion factor from voltage to current
+V_per_V = 15 # Conversion factor from DAQ input voltage to Piezo voltage
 
 
 # ====== DAQ Setup Helpers ======
-def init_ao_task(min_val=0.0, max_val=10.0):
+def init_ao0_task(min_val=0.0, max_val=10.0):
     task = nidaqmx.Task()
-    task.ao_channels.add_ao_voltage_chan(AO_CHANNEL, min_val=min_val, max_val=max_val)
+    task.ao_channels.add_ao_voltage_chan(AO0_CHANNEL, min_val=min_val, max_val=max_val)
     return task
 
+def init_ao1_task(min_val=0.0, max_val=10.0):
+    task = nidaqmx.Task()
+    task.ao_channels.add_ao_voltage_chan(AO1_CHANNEL, min_val=min_val, max_val=max_val)
+    return task
 
 def init_ai_task(min_val=0.0, max_val=10.0):
     task = nidaqmx.Task()
@@ -32,16 +38,20 @@ def read_laser_current():
         print(f"Read CTL OUT: {voltage:.3f} V → {current_mA:.2f} mA")
 
 
-def set_voltage(voltage):
-    with init_ao_task() as task:
+def set_ao0_voltage(voltage):
+    with init_ao0_task() as task:
         task.write(voltage)
     print(f"Set voltage: {voltage:.2f} V")
-
+    
+def set_ao1_voltage(voltage):
+    with init_ao1_task() as task:
+        task.write(voltage)
+    print(f"Set voltage: {voltage:.2f} V")
 
 def ramp_voltage(start_v, end_v, duration, steps=100):
     voltages = np.linspace(start_v, end_v, steps)
     delay = duration / steps
-    with init_ao_task() as task:
+    with init_ao0_task() as task:
         for v in voltages:
             task.write(v)
             time.sleep(delay)
@@ -50,26 +60,40 @@ def ramp_voltage(start_v, end_v, duration, steps=100):
 
 def set_laser_current(current_mA):
     voltage = current_mA / mA_per_V
-    with init_ao_task(min_val=-10.0, max_val=10.0) as task:
+    with init_ao0_task(min_val=-10.0, max_val=10.0) as task:
         task.write(voltage)
     print(f"Set laser current: {current_mA:.2f} mA")
+
+def set_piezo_voltage(voltage_V):
+    voltage = voltage_V / V_per_V
+    with init_ao1_task() as task:
+        task.write(voltage)
+    print(f"Set piezo voltage: {voltage_V:.1f} V")
 
 
 def ramp_laser_current(start_mA, end_mA, duration, steps=100):
     voltages = np.linspace(start_mA / mA_per_V, end_mA / mA_per_V, steps)
     delay = duration / steps
-    with init_ao_task(min_val=-10.0, max_val=10.0) as task:
+    with init_ao0_task(min_val=-10.0, max_val=10.0) as task:
         for v in voltages:
             task.write(v)
             time.sleep(delay)
-    print("Current ramp complete.")
+    print("Diode current ramp complete.")
+
+def ramp_piezo_voltage(start_V, end_V, duration, steps=100):
+    voltages = np.linspace(start_V / V_per_V, end_V / V_per_V, steps)
+    delay = duration / steps
+    with init_ao1_task() as task:
+        for v in voltages:
+            task.write(v)
+            time.sleep(delay)
+    print("Piezo voltage ramp complete.")
 
 
 def start_ramp_thread(start_mA, end_mA, duration):
     thread = threading.Thread(target=ramp_laser_current, args=(start_mA, end_mA, duration))
     thread.start()
     return thread
-
 
 # ====== Real-time time vs. current  ======
 def log_and_plot_current(duration):
@@ -109,5 +133,8 @@ def log_and_plot_current(duration):
 
 # ====== Example Usage ======
 if __name__ == "__main__":
-    ramp_thread = start_ramp_thread(-100, 100, 5)
-    log_and_plot_current(5)
+    set_piezo_voltage(20)
+    # ramp_piezo_voltage(0, 75, 20)
+    # ramp_thread = start_ramp_thread(-100, 100, 5)
+    # log_and_plot_current(5)
+
