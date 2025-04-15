@@ -3,6 +3,7 @@
 This project sets up a complete experimental control system for a tunable laser using:
 
 - Thorlabs **LDC205C** (laser current controller)
+- Thorlabs **MDT694** (piezo voltage controller)
 - National Instruments **USB-6002 DAQ** (for analog control and monitoring)
 - Keysight **86120B Wavemeter** (for measuring laser frequency)
 - Python with `nidaqmx` and `pyvisa` libraries
@@ -13,21 +14,20 @@ It enables you to:
 - Read frequency/wavelength measurements from the wavemeter
 - Plot real-time current vs. frequency behavior
 
----
 
-## 📦 Required Hardware
+## Required Hardware
 
 | Device              | Function                          |
 |---------------------|-----------------------------------|
 | LDC205C             | Laser diode current control       |
+| MDT694              | piezo voltage control       |
 | NI USB-6002         | Analog output/input interface     |
 | Keysight 86120B     | Optical frequency/wavelength meter|
 | GPIB-USB-HS Adapter | Connect wavemeter to PC via GPIB  |
 | BNC cables          | Analog voltage wiring             |
 
----
 
-## 🛠️ 1. Hardware Wiring Guide
+## 1. Hardware Wiring Guide
 
 ### A. Laser Current Control (LDC205C)
 
@@ -40,16 +40,29 @@ The LDC205C receives a voltage on the **MOD IN** port to set the laser current, 
 | AI0             | CTL OUT (R3 center)        | Read actual current      |
 | AI GND          | CTL OUT shield             | Ground                   |
 
-> **Conversion**: 1 V = 50 mA current (assuming current limit = 500 mA on LDC205C)
+> **Conversion**: 1 V = 50 mA (Current limit = 500 mA on LDC205C)
 
-### B. Frequency Measurement (Wavemeter 86120B)
+### B. Piezo Voltage Control (MDT694)
+
+The MDT694 receives a voltage on the **MOD IN** port to set the piezo voltage. Unfortunately, no output to report actual voltage but we do know the conversion between the two is 15x.
+
+| NI USB-6002 Pin | Connects To                | Function                 |
+|-----------------|-----------------------------|--------------------------|
+| AO1             | MDT694 MOD IN             | Set piezo voltage        |
+| AO GND          | MOD IN shield              | Ground                   |
+
+
+> **Conversion**: 1 V = 15 V (Voltage limit = 150 V on MDT694)
+
+
+### C. Frequency Measurement (Wavemeter 86120B)
 
 - Connect via **GPIB-USB-HS** to PC
 - Ensure the device is powered on and connected to the same PC running Python
 
----
 
-## 💾 2. Software Installation
+
+## 2. Software Installation
 
 ### 2.1 Python Libraries
 Install the required Python packages using pip:
@@ -70,9 +83,9 @@ You need both DAQ and VISA support from NI:
 3. **NI MAX (Measurement & Automation Explorer)**
    - Included with NI-DAQmx or VISA install. Use it to verify devices like "Dev1".
 
----
 
-## 🔧 3. Python Script Features
+
+## 3. Python Script Features
 
 ### 3.1 Set or Ramp Laser Current
 ```python
@@ -93,13 +106,10 @@ wavemeter = rm.open_resource("GPIB0::20::INSTR")
 print(wavemeter.query("*IDN?"))     # Confirm connection
 ```
 
-### 3.4 Read Frequency or Wavelength
+### 3.4 Read Frequency
 ```python
 freq_Hz = float(wavemeter.query(":FETCH:SCALar:FREQuency?"))
 print(f"Frequency: {freq_Hz/1e12:.6f} THz")
-
-wavelength_nm = float(wavemeter.query(":FETCH:SCALar:WAVelength?"))
-print(f"Wavelength: {wavelength_nm:.4f} nm")
 ```
 
 ### 3.5 Read Multiple Frequency Lines
@@ -109,9 +119,8 @@ freqs_THz = [float(f)/1e12 for f in response.split(',') if f]
 print("Detected lines (THz):", freqs_THz)
 ```
 
----
 
-## 📈 4. Real-Time Current vs Frequency Plot
+##  4. Real-Time Current vs Frequency Plot
 
 You can sweep current and read frequency in parallel, storing (current, frequency) pairs and plotting them.
 
@@ -128,9 +137,8 @@ plot(currents, frequencies)
 
 This generates a **scatter plot** of laser frequency as a function of laser current, useful for characterizing mode hops or tuning behavior.
 
----
 
-## 🧠 5. Notes and Tips
+##  5. Notes and Tips
 
 1. Always start with low current (50–100 mA) and set `ILIM` properly on the LDC205C front panel.
 2. Use `time.sleep(0.2)` between steps to let wavemeter stabilize.
@@ -142,19 +150,4 @@ print([d.name for d in nidaqmx.system.System.local().devices])
 4. Use NI MAX to reset or rename DAQ devices if needed.
 5. Ensure GPIB-USB-HS is recognized in NI MAX.
 
----
-
-## ✅ Summary
-| Task                          | Tool/Command                                             |
-|-------------------------------|----------------------------------------------------------|
-| Install Python packages       | `pip install nidaqmx pyvisa matplotlib numpy`           |
-| Install NI drivers            | DAQmx + VISA Runtime from NI.com                         |
-| Connect DAQ to LDC205C        | AO0 → MOD IN, AI0 ← CTL OUT                             |
-| Connect Wavemeter             | GPIB-USB-HS → USB port                                   |
-| Verify instruments            | NI MAX + `pyvisa.ResourceManager()`                     |
-| Read frequency in THz         | `:FETCH:SCALar:FREQuency?`                              |
-| Read multiple lines           | `:FETCH:ARRAY:SCALAR:FREQ?`                             |
-| Plot current vs frequency     | Ramp + analog read + VISA read + matplotlib             |
-
-Let me know if you'd like to package this with example scripts or create an auto-run GUI!
 
