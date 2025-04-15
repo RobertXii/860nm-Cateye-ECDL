@@ -72,7 +72,7 @@ def start_ramp_thread(start_mA, end_mA, duration):
 
 
 # ====== Real-time time vs. current  ======
-def log_and_plot_current(duration=10):
+def log_and_plot_current(duration):
     times = []
     currents = []
 
@@ -96,8 +96,8 @@ def log_and_plot_current(duration=10):
             currents.append(current)
 
             line.set_data(times, currents)
-            ax.set_xlim(0, max(10, now))
-            ax.set_ylim(0, max(250, current + 10))
+            ax.set_xlim(0, max(duration, now))
+            ax.set_ylim(0, max(350, current + 10))
             plt.pause(0.01)
 
             if now >= duration:
@@ -109,5 +109,5 @@ def log_and_plot_current(duration=10):
 
 # ====== Example Usage ======
 if __name__ == "__main__":
-    ramp_thread = start_ramp_thread(10, 200, 10)
-    log_and_plot_current(duration=10)
+    ramp_thread = start_ramp_thread(-100, 100, 5)
+    log_and_plot_current(5)
