@@ -11,7 +11,7 @@ AO1_CHANNEL = f"{DEVICE_NAME}/ao1"
 AI_CHANNEL = f"{DEVICE_NAME}/ai0"
 mA_per_V = 50  # Conversion factor from voltage to current
 V_per_V = 15 # Conversion factor from DAQ input voltage to Piezo voltage
-
+k_feedforward = 4.375 # V/mA 17.5V/4mA = 4.375 V/mA
 
 # ====== DAQ Setup Helpers ======
 def init_ao0_task(min_val=0.0, max_val=10.0):
@@ -57,12 +57,16 @@ def ramp_voltage(start_v, end_v, duration, steps=100):
             time.sleep(delay)
     print("Voltage ramp complete.")
 
-
 def set_laser_current(current_mA):
     voltage = current_mA / mA_per_V
     with init_ao0_task(min_val=-10.0, max_val=10.0) as task:
         task.write(voltage)
     print(f"Set laser current: {current_mA:.2f} mA")
+
+    # ===== Feedforward piezo voltage =====
+    feedforward_voltage = current_mA * k_feedforward
+    set_piezo_voltage(feedforward_voltage)
+    print(f"Feedforward piezo voltage: {feedforward_voltage:.2f} V")
 
 def set_piezo_voltage(voltage_V):
     voltage = voltage_V / V_per_V
@@ -71,7 +75,7 @@ def set_piezo_voltage(voltage_V):
     print(f"Set piezo voltage: {voltage_V:.1f} V")
 
 
-def ramp_laser_current(start_mA, end_mA, duration, steps=100):
+def ramp_laser_current(start_mA, end_mA, duration, steps=1000):
     voltages = np.linspace(start_mA / mA_per_V, end_mA / mA_per_V, steps)
     delay = duration / steps
     with init_ao0_task(min_val=-10.0, max_val=10.0) as task:
@@ -80,7 +84,7 @@ def ramp_laser_current(start_mA, end_mA, duration, steps=100):
             time.sleep(delay)
     print("Diode current ramp complete.")
 
-def ramp_piezo_voltage(start_V, end_V, duration, steps=100):
+def ramp_piezo_voltage(start_V, end_V, duration, steps=1000):
     voltages = np.linspace(start_V / V_per_V, end_V / V_per_V, steps)
     delay = duration / steps
     with init_ao1_task() as task:
@@ -133,8 +137,10 @@ def log_and_plot_current(duration):
 
 # ====== Example Usage ======
 if __name__ == "__main__":
-    set_piezo_voltage(20)
-    # ramp_piezo_voltage(0, 75, 20)
-    # ramp_thread = start_ramp_thread(-100, 100, 5)
-    # log_and_plot_current(5)
+    # set_piezo_voltage(30)
+    # ramp_piezo_voltage(10, 60, 50)
+    # ramp_thread = start_ramp_thread(0, 30, 30)
+    # log_and_plot_current(30)
+    set_laser_current(10)
+    # read_laser_current()
 

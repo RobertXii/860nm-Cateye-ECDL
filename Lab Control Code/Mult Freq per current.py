@@ -3,6 +3,7 @@ import pyvisa
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+print(pyvisa.__version__)
 
 # --- Configuration ---
 DEVICE = "Dev1"
