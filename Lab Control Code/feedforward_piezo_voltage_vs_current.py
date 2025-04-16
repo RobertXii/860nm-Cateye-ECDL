@@ -27,13 +27,13 @@ except:
 if wlmData.dll.GetWLMCount(0) == 0:
     sys.exit("No WLM instance found.")
 else:
-    print(f"✅ Connected to {wlmData.dll.GetWLMCount(0)} WLM system(s)")
+    print(f"Connected to {wlmData.dll.GetWLMCount(0)} WLM system(s)")
 
 # Get frequency from wavemeter (in THz)
 def GetFreq(channel=4):
     freq = wlmData.dll.GetFrequencyNum(channel, 0)
     if freq <= 0:
-        print("⚠️ Invalid frequency reading.")
+        print("Invalid frequency reading.")
         return None
     return freq / 1e12  # THz
 
@@ -71,6 +71,6 @@ plt.scatter(all_piezo_voltages, np.array(all_frequencies)*1e15 - 3.48697e5, s=5,
 plt.xlabel("Piezo Voltage (V)")
 plt.ylabel("Frequency Offset (GHz)")
 plt.title("Laser Frequency vs Piezo Voltage (with feedforward current)")
-plt.grid(True)
+plt.grid(False)
 plt.tight_layout()
 plt.show()
