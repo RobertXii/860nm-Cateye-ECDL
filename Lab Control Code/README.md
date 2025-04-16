@@ -6,7 +6,7 @@ This project sets up a complete experimental control system for a tunable laser 
 - Thorlabs **MDT694** (piezo voltage controller)
 - National Instruments **USB-6002 DAQ** (for analog control and monitoring)
 - HighFinesse **WS/7 8395** (for measuring absolute laser frequency)
-- Keysight **86120B Wavemeter** (can't pull frequency data to computer, so I switched to HighFinesse WS/7 8395)
+- Keysight **86120B Wavemeter** (can't pull frequency data but power data to computer, so I switched to HighFinesse WS/7 8395)
 - Python with `nidaqmx` and `pyvisa` libraries
 
 It enables you to:
