@@ -5,7 +5,8 @@ This project sets up a complete experimental control system for a tunable laser 
 - Thorlabs **LDC205C** (laser current controller)
 - Thorlabs **MDT694** (piezo voltage controller)
 - National Instruments **USB-6002 DAQ** (for analog control and monitoring)
-- Keysight **86120B Wavemeter** (for measuring laser frequency)
+- HighFinesse **WS/7 8395** (for measuring absolute laser frequency)
+- Keysight **86120B Wavemeter** (can't pull frequency data to computer, so I switched to HighFinesse WS/7 8395)
 - Python with `nidaqmx` and `pyvisa` libraries
 
 It enables you to:
@@ -22,7 +23,7 @@ It enables you to:
 | LDC205C             | Laser diode current control       |
 | MDT694              | piezo voltage control       |
 | NI USB-6002         | Analog output/input interface     |
-| Keysight 86120B     | Optical frequency/wavelength meter|
+| HighFinesse WS/7 8395 | Optical frequency/wavelength meter|
 | GPIB-USB-HS Adapter | Connect wavemeter to PC via GPIB  |
 | BNC cables          | Analog voltage wiring             |
 
@@ -77,7 +78,7 @@ You need both DAQ and VISA support from NI:
 1. **NI-DAQmx Driver** (for USB-6002 DAQ)
    - Download: https://www.ni.com/en-us/support/downloads/drivers/download.ni-daqmx.html
 
-2. **NI-VISA Runtime** (for GPIB communication)
+2. **NI-VISA Runtime** (for GPIB communication, but since we are not using the old wavemeter, can skip this)
    - Download: https://www.ni.com/en-us/support/downloads/drivers/download.ni-visa.html
 
 3. **NI MAX (Measurement & Automation Explorer)**
@@ -92,53 +93,60 @@ You need both DAQ and VISA support from NI:
 set_laser_current(150)              # Set 150 mA
 ramp_laser_current(0, 250, 10)      # Ramp 0 to 250 mA over 10 seconds
 ```
+See daq_control_Robert.py
 
 ### 3.2 Read Actual Current (from CTL OUT)
 ```python
 current_mA = read_laser_current()   # Read actual output current
 ```
+See daq_control_Robert.py
 
-### 3.3 Connect and Query Wavemeter
+### 3.3 Connect and Query Wavemeter (Not Working)
 ```python
 import pyvisa
 rm = pyvisa.ResourceManager("@ni")
 wavemeter = rm.open_resource("GPIB0::20::INSTR")
 print(wavemeter.query("*IDN?"))     # Confirm connection
 ```
+See test_GPIB_connection
 
 ### 3.4 Read Frequency
 ```python
 freq_Hz = float(wavemeter.query(":FETCH:SCALar:FREQuency?"))
 print(f"Frequency: {freq_Hz/1e12:.6f} THz")
 ```
+See daq_control_Robert.py
 
-### 3.5 Read Multiple Frequency Lines
+### 3.5 Scan Current/Voltage vs. Frequency
 ```python
-response = wavemeter.query(":FETCH:ARRAY:SCALar:FREQuency?")
-freqs_THz = [float(f)/1e12 for f in response.split(',') if f]
-print("Detected lines (THz):", freqs_THz)
+with nidaqmx.Task() as ao1_task, nidaqmx.Task() as ao0_task:
+    ao1_task.ao_channels.add_ao_voltage_chan(f"{DEVICE}/{AO1_CHANNEL}", min_val=0.0, max_val=10.0)
+    ao0_task.ao_channels.add_ao_voltage_chan(f"{DEVICE}/{AO0_CHANNEL}", min_val=-10.0, max_val=10.0)
+
+    for v_daq in voltages_daq:
+        # Set voltages
+        ao1_task.write(v_daq)  # Piezo
+        ao0_task.write(v_daq / k_feedforward)  # Feedforward to laser diode
+
+        time.sleep(pause)
+
+        # Convert back to physical piezo voltage
+        piezo_voltage_V = v_daq * V_per_V
+
+        # Get frequency
+        freq_thz = GetFreq()
+        if freq_thz is not None:
+            all_piezo_voltages.append(piezo_voltage_V)
+            all_frequencies.append(freq_thz)
+
 ```
+See feedforward_piezo_voltage_vs_current.py
+
+### 3.6 GUI For Piezo Voltage Control With Feedforward
+See feed_forward_GUI.py
 
 
-##  4. Real-Time Current vs Frequency Plot
-
-You can sweep current and read frequency in parallel, storing (current, frequency) pairs and plotting them.
-
-### Example Flow:
-```python
-for voltage in ramp:
-    set_voltage(voltage)
-    current = read_current()
-    frequencies = read_all_frequencies()
-    for f in frequencies:
-        store(current, f)
-plot(currents, frequencies)
-```
-
-This generates a **scatter plot** of laser frequency as a function of laser current, useful for characterizing mode hops or tuning behavior.
-
-
-##  5. Notes and Tips
+##  4. Notes and Tips
 
 1. Always start with low current (50–100 mA) and set `ILIM` properly on the LDC205C front panel.
 2. Use `time.sleep(0.2)` between steps to let wavemeter stabilize.
@@ -149,5 +157,13 @@ print([d.name for d in nidaqmx.system.System.local().devices])
 ```
 4. Use NI MAX to reset or rename DAQ devices if needed.
 5. Ensure GPIB-USB-HS is recognized in NI MAX.
+6. When getting frequency from HighFinesse wavemeter, use getFrequencyNum(x, 0) with channel x = 3 or 4
+
+By trials, a good combination of paramters are: 300mA diode current; 8.05 kilo Ohm thermoresistor; arb. piezo voltage. It's observed that when tunning laser diode alone, lasing frequency jumps in discrete steps every 4mA (0.08V DAQ input signal) with frequency inteval around 1.5GHz; when tunning the piezo voltage, the frequency changes smooothly and hops every 15V (1V DAQ input signal). piezo_voltage_vs_frequency_scan.py, current_vs_frequency_scan.py, and feedforward_piezo_voltage_vs_current.py allows scan across different variables, and if everthing set up, they produce the following images:
+
+[current vs frequency.pdf](https://github.com/user-attachments/files/19769281/current.vs.frequency.pdf)
+[piezo voltage vs frequency.pdf](https://github.com/user-attachments/files/19769282/piezo.voltage.vs.frequency.pdf)
+[piezo voltage with feedforward vs frequency.pdf](https://github.com/user-attachments/files/19769283/piezo.voltage.with.feedforward.vs.frequency.pdf)
+
 
 
