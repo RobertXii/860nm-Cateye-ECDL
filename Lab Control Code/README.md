@@ -56,10 +56,12 @@ The MDT694 receives a voltage on the **MOD IN** port to set the piezo voltage. U
 > **Conversion**: 1 V = 15 V (Voltage limit = 150 V on MDT694)
 
 
-### C. Frequency Measurement (Wavemeter 86120B)
+### C. Frequency Measurement (Wavemeter WS/7 MC - 8395)
 
-- Connect via **GPIB-USB-HS** to PC
-- Ensure the device is powered on and connected to the same PC running Python
+- Connect direct to PC
+- Powered by USB
+- The software comes with the wavemeter
+- Obtain frequency using *freq = wlmData.dll.GetFrequencyNum(channel, 0)*
 
 
 
