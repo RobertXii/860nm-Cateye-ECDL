@@ -150,8 +150,8 @@ See *feed_forward_GUI.py*
 
 ##  4. Notes and Tips
 
-1. Always start with low current (50–100 mA) and set `ILIM` properly on the LDC205C front panel.
-2. Use `time.sleep(0.2)` between steps to let wavemeter stabilize.
+1. Always start with low current (50–100 mA) or even unplug the laser diode to aviod voltage spike from the DAQ input, and set `ILIM` properly on the LDC205C front panel.
+2. Use `time.sleep(0.01)` between steps to let wavemeter stabilize.
 3. Confirm the device name (`Dev1`) with:
 ```python
 import nidaqmx.system
