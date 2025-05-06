@@ -1,5 +1,6 @@
 import nidaqmx
 import time
+from daq_control_Robert import set_laser_current, set_piezo_voltage
 import wlmData
 import wlmConst
 import sys
@@ -12,8 +13,8 @@ DEVICE = "Dev1"
 AO_CHANNEL = "ao1"
 V_per_V = 15
 start_voltage = 0
-end_voltage = 140
-steps = 1000
+end_voltage = 100
+steps = 2000
 pause = 0.01  # seconds between steps
 
 DLL_PATH = "wlmData.dll"
@@ -66,6 +67,9 @@ plt.figure()
 plt.scatter(all_currents, np.array(all_frequencies)*1e15 - 3.48697e5, s=5, c='k', marker='o')
 plt.xlabel("Piezo Voltage (V)")
 plt.ylabel("Frequency (GHz)")
-plt.title("Piezo Voltage vs Current")
+plt.title("Piezo Voltage vs Current (with analoug input)")
 plt.grid(False)
 plt.show()
+
+set_laser_current(0)
+set_piezo_voltage(0)

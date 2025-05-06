@@ -12,9 +12,9 @@ DEVICE = "Dev1"
 AO_CHANNEL = "ao0"
 AI_CHANNEL = "ai0"
 mA_per_V = 50
-start_current_mA = -30
-end_current_mA = 20
-steps = 1000
+start_current_mA = 50
+end_current_mA = 0
+steps = 2000
 pause = 0.01  # seconds between steps
 
 DLL_PATH = "wlmData.dll"
