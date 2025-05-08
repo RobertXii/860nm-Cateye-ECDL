@@ -23,7 +23,7 @@ lambda = linspace(855, 875, 50000); % create plot wavelength range in nm
 T_filter = interp1(wavelength_data, transmission_data, lambda,'spline');
 
 theta = 10.792;  % Initial angle of incidence
-L_e = 0.05;  % Initial external cavity length (m)
+L_e = 0.03;  % Initial external cavity length (m)
 Current = 25;  % system temperature in K
 
 %% Initial Plot Setup
